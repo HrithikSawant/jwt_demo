@@ -8,6 +8,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
@@ -17,19 +18,25 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Autowired
     private JwtFilter jwtFilter;
 
+    @Autowired
+    private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf()
                 .disable()
                 .authorizeRequests()
-                .antMatchers("/api/v1/auth/authenticate").permitAll()
-                .antMatchers(HttpMethod.GET,"/api/v1/auth/").hasAnyAuthority("Patient")
-                .antMatchers(HttpMethod.POST,"/api/v1/auth/").hasAnyAuthority("Admin","Receptionist")
+                .antMatchers("/api/v1/auth/authenticate","/specific-url-pattern").permitAll()
+                .antMatchers("/api/v1/home/welcome").hasAnyAuthority("Patient","Admin")
+                .antMatchers("/api/v1/home/data").hasAnyAuthority("Receptionist","Admin")
                 .anyRequest()
                 .authenticated()
-                .and()
+                .and().
+                exceptionHandling().authenticationEntryPoint(restAuthenticationEntryPoint)
+          .and()
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
     }
 

@@ -4,7 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hrithik.jwt_demo.entity.User;
 import com.hrithik.jwt_demo.service.UserService;
 import com.hrithik.jwt_demo.utility.JwtUtility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -24,6 +27,9 @@ import java.util.Map;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JwtFilter.class);
+
     @Autowired
     private JwtUtility jwtUtility;
 
@@ -32,6 +38,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        LOG.info("Inside JwtFilter Filter!!");
+
         if (request.getServletPath().equals("/api/v1/auth/authenticate")) {
             filterChain.doFilter(request, response);
         } else {
@@ -55,16 +63,9 @@ public class JwtFilter extends OncePerRequestFilter {
                     }
                 } catch (Exception e) {
                     logger.error("Error logging in: {}" + e.getMessage());
-                    response.setHeader("error", e.getMessage());
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-//                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                    Map<String, String> error = new HashMap<>();
-                    error.put("error_message", e.getMessage());
-                    response.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-                    new ObjectMapper().writeValue(response.getOutputStream(), error);
+                    filterChain.doFilter(request, response);
                 }
             } else {
-                logger.error("Error logging in: {Authorization header needed}");
                 filterChain.doFilter(request, response);
             }
         }

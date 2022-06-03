@@ -15,16 +15,6 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @GetMapping("/")
-    public String home() {
-        return "Welcome to JWT TOKEN!!";
-    }
-
-    @PostMapping("/")
-    public Message save(@RequestBody Message message) {
-       return new Message(message.getMessage());
-    }
-
     @PostMapping("/authenticate")
     public JwtResponse authenticate(@RequestBody User user) {
         return new JwtResponse(userService.authenticate(user));
